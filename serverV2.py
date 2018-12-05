@@ -10,9 +10,9 @@ import re
 import sys
 import select
 
-
 pwm = Adafruit_PCA9685.PCA9685()
 #Values were deteremind to be the ZERO and MIN points for the proper PWM widths sent to onboard flight controller
+#These have now been tested in the lab and are infact correct! Creates pulse widths beteen 1-2ms. Zero value = 1.5ms at 50hz
 MIN_VALUE = 230
 ZERO_VALUE = 325
 
@@ -49,6 +49,9 @@ def talktopi(aileron, elevator, throttle, rudder):
     time.sleep(0.01)
 
 def Main():
+    #Local variable def
+
+
 
     printboth("\n\n\n New Execution @%s....\n\n\n"%(time.strftime("%Y-%m-%d_%H:%M:%S", time.gmtime())))
     values = []
@@ -77,7 +80,6 @@ def Main():
         except:
             disconnected()
             break
-
         #Recieves data from Controller to grab current values
         #Format ####,####,####,#### = 8 bits * 4 numbers * 4 pairs + 4 commas = 132 bits. Did 160 bits just to be safe
         try:
