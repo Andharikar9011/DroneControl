@@ -10,6 +10,17 @@ import re
 import sys
 import select
 
+#For integrating Accelerometer and Gyroscope: https://github.com/Tijndagamer/mpu6050
+from mpu6050 import mpu6050
+
+sensor = mpu6050(0x68) #0x68 is memory address on i2C
+#Functions available
+#.get_temp() -> temp in *C
+#.get_gyro_data() -> Gyro data in param format. Access with sensor['x'] to get x value.
+#.get_accel_data() -> Same as Gyro m/s^2
+
+# If gyro
+
 pwm = Adafruit_PCA9685.PCA9685()
 #Values were deteremind to be the ZERO and MIN points for the proper PWM widths sent to onboard flight controller
 #These have now been tested in the lab and are infact correct! Creates pulse widths beteen 1-2ms. Zero value = 1.5ms at 50hz
@@ -61,12 +72,12 @@ def Main():
     host = ip.getsockname()[0]
     port = 6970
 
-    #Listing properties
-    printboth("Server IP: %s"%(host))
+    #Listing properties -> Changed for VPN 0.0.0.0 (Allows all connections)
+    printboth("Server IP: 0.0.0.0")
     printboth("Server PORT: %d"%(port))
 
     s = socket.socket()
-    s.bind((host, port))
+    s.bind(('0.0.0.0', port))
 
     #Waiting for connection from computer
     s.listen(1)
