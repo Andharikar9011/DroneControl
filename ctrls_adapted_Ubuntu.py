@@ -13,8 +13,8 @@ import subprocess
 import os
 import signal
 
-#Inital Connection set up -> Drone static IP
-host = '192.168.0.103'
+#Inital Connection set up -> Drone static IP over Hai's PIC VPN
+host = '10.8.0.2'
 
 #Static port
 port = 6970
@@ -47,16 +47,18 @@ throttle = 0
 low_cal = 240
 mid_cal = 330
 max_cal = 420
-
 Canny = 1
 
 #Activated by pressing start button. However, needs to be calibrated again
-def StartYourEngines(heartbeat):
+def StartYourEngines(heartbeat, s):
     if heartbeat:
         print("Sending start sequence to drone...")
-        message = "%d,%d,%d,%d " % (239, 251, 245, 400) #Change!
+        message = "%d,%d,%d,%d " % (237, 237, 248, 238) #Change!
         print(message)
-        s.send(message.encode('utf-8'))
+        for i in range(10):
+            s.send(message.encode('utf-8'))
+            heartbeat = 0
+            s.recv(5)
         print("Start sequence sent...")
 
 
@@ -85,24 +87,25 @@ while done==False:
             min_jump = 0.05
 
             #CUSTOM FOR UBUNTU CONTROL
-            if i == 0 and abs(axis-yaw) > min_jump:
-                yaw = axis - 0.051
-            if i == 4 and abs(axis-throttle) > min_jump:
-                throttle = (axis +0.004)*-1
-            if i == 3 and abs(axis-roll) > min_jump:
-                roll = axis + 0.027
+            if i == 2 and abs(axis-yaw) > min_jump:
+                yaw = axis
+            if i == 3 and abs(axis-throttle) > min_jump:
+                throttle = (axis)*-1
+            if i == 0 and abs(axis-roll) > min_jump:
+                roll = axis
             if i == 1 and abs(axis-pitch) > min_jump:
-                pitch = (axis + 0.020) * -1
+                pitch = (axis) * -1
 
-        # Grabs value for start button on PS3 controller (For StartYourEngines())
-        button = joystick.get_button(3)
-
+        # Grabs value for start button on Logitech controller (For StartYourEngines())
+        engine_button = joystick.get_button(0)
+        hover_button = joystick.get_button(1)
+        
         # Hat switch. All or nothing for direction, not like joysticks.
         # Value comes back in an array.
-        hats = joystick.get_numhats()
+        #hats = joystick.get_numhats()
 
-        for i in range( hats ):
-            hat = joystick.get_hat( i )
+        #for i in range( hats ):
+        #    hat = joystick.get_hat( i )
     
     ####Prepare to send, currently hardcoded to call settings -  Custom
     send_pitch = int(mid_cal + 90*pitch) - 3
@@ -117,12 +120,11 @@ while done==False:
     except:
         print("Lost connection...")
         break
-    # If start button pressed
-    if button:
-        StartYourEngines(heartbeat)
-        heartbeat = 0
-        heartbeat = s.recv(5)
-
+    # If start button(s) pressed
+    if engine_button:
+        StartYourEngines(heartbeat, s)
+    if hover_button:
+        print("AutoHover Engagged")
     if heartbeat:
         #print("Sending Commands...")
         message = "%d,%d,%d,%d "%(send_roll, send_pitch, send_throttle, send_yaw)
