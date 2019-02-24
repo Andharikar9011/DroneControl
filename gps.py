@@ -51,7 +51,7 @@ gps.send_command(b'PMTK220,1000')
 
 # Main loop runs forever printing the location, etc. every second.
 last_print = time.monotonic()
-while True:
+def get_data():
     # Make sure to call gps.update() every loop iteration and at least twice
     # as fast as data comes from the GPS unit (usually every second).
     # This returns a bool that's true if it parsed new data (you can ignore it
@@ -59,7 +59,7 @@ while True:
     gps.update()
     # Every second print out current location details if there's a fix.
     current = time.monotonic()
-    if current - last_print >= 1.0:
+    if current - last_print >= 1.0
         last_print = current
         if not gps.has_fix:
             # Try again if we don't have a fix yet.
@@ -80,6 +80,7 @@ while True:
         print('Fix quality: {}'.format(gps.fix_quality))
         # Some attributes beyond latitude, longitude and timestamp are optional
         # and might not be present.  Check if they're None before trying to use!
+        '''
         if gps.satellites is not None:
             print('# satellites: {}'.format(gps.satellites))
         if gps.altitude_m is not None:
@@ -92,4 +93,12 @@ while True:
             print('Horizontal dilution: {}'.format(gps.horizontal_dilution))
         if gps.height_geoid is not None:
             print('Height geo ID: {} meters'.format(gps.height_geoid))
+        '''
+        return {'Latitude': gps.latitude, 'Longitude': gps.longitude, 'FixQuality': gps.fix_quality,
+        		'NumSats': gps.satellites, 'Altitude': gps.altitude_m,
+        		'Speed': gps.speed_knots, 'TrackAngle', gps.track_angle_deg}
+    else:
+    	return "No Change"
 
+if __name__ == '__main__':
+	get_data()
