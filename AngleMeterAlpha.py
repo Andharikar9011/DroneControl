@@ -5,7 +5,13 @@
 #SCL - SCL (5 - Board)
 #SDA - SDA (3 - Board)
 
-
+#Import this file
+#mpu = AngleMeterAlpha.AngleMeterAlpha()
+#mpu.MPU_Init()
+#mpu.measure()
+# Begin calling measurements
+#mpu.get_kalman_roll()
+#mpu.get_kalman_pitch()
 from Kalman import KalmanAngle
 import smbus as smbus2			#import SMBus module of I2C
 import time
