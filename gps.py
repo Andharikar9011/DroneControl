@@ -96,7 +96,7 @@ def get_data():
         '''
         return {'Latitude': gps.latitude, 'Longitude': gps.longitude, 'FixQuality': gps.fix_quality,
         		'NumSats': gps.satellites, 'Altitude': gps.altitude_m,
-        		'Speed': gps.speed_knots, 'TrackAngle', gps.track_angle_deg}
+        		'Speed': gps.speed_knots, 'TrackAngle': gps.track_angle_deg}
     else:
     	return "No Change"
 
