@@ -44,16 +44,22 @@ yaw = 0
 throttle = 0
 
 #Calibration Settings
-low_cal = 240
-mid_cal = 330
-max_cal = 420
+low_cal = 3807
+mid_cal = 5246
+max_cal = 6685
+
+#python2 on Drone
+#low_cal = 240
+#mid_cal = 330
+#max_cal = 420
+
 Canny = 1
 
 #Activated by pressing start button. However, needs to be calibrated again
 def StartYourEngines(heartbeat, s):
     if heartbeat:
         print("Sending start sequence to drone...")
-        message = "%d,%d,%d,%d " % (237, 237, 248, 238) #Change!
+        message = "%d,%d,%d,%d " % (3807, 3807, 3807, 3807) #Change!
         print(message)
         for i in range(10):
             s.send(message.encode('utf-8'))
@@ -108,10 +114,16 @@ while done==False:
         #    hat = joystick.get_hat( i )
     
     ####Prepare to send, currently hardcoded to call settings -  Custom
-    send_pitch = int(mid_cal + 90*pitch) - 3
+    send_pitch = int(mid_cal + 1439*pitch)
+    send_yaw = int(mid_cal + 1439*yaw)
+    send_roll =int(mid_cal + 1439*roll)
+    send_throttle = int(mid_cal + 1439*throttle)
+
+    #python2 on Drone
+    '''send_pitch = int(mid_cal + 90*pitch) - 3
     send_yaw = int(mid_cal + 90*yaw) - 2
     send_roll =int(mid_cal + 90*roll) - 3
-    send_throttle = int(mid_cal +90*throttle)
+    send_throttle = int(mid_cal + 90*throttle)'''
 
     #####Send commands out
     # To remain in sync with drone

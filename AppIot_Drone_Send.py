@@ -5,10 +5,10 @@ import sys
 import time
 import requests
 
-if len(sys.argv) != 10:
-    print("ERROR: Require sensor data to post.")
-    print("Sensor data order: OperatingStatus Longitude Latitude Altitude Speed CameraOnOff RemainingBattery RemainingFlight CommandString")
-    sys.exit(1)
+#if len(sys.argv) != 10:
+#    print("ERROR: Require sensor data to post.")
+#    print("Sensor data order: OperatingStatus Longitude Latitude Altitude Speed CameraOnOff RemainingBattery RemainingFlight CommandString")
+#    sys.exit(1)
 
 def post_data(sensor_id, sensor_value, gateway_id, sensor_type):
     
@@ -35,13 +35,13 @@ def post_data(sensor_id, sensor_value, gateway_id, sensor_type):
     #   ]
     # }
     if sensor_type == "v":
-      print("found int or float")
+      #print("found int or float")
       sensor_data = '{"bu":"default-unit","e":[{"n":"%s","u":"default-unit","v":%s,"bv":null,"sv":null,"t":%s}]}' % (sensor_id, sensor_value, time_now)
     elif sensor_type == "sv":
-      print("found string")
+      #print("found string")
       sensor_data = '{"bu":"default-unit","e":[{"n":"%s","u":"default-unit","v":null,"bv":null,"sv":"%s","t":%s}]}' % (sensor_id, sensor_value, time_now)
     elif sensor_type == "bv":
-      print("found boolean")
+      #print("found boolean")
       sensor_data = '{"bu":"default-unit","e":[{"n":"%s","u":"default-unit","v":null,"bv":%s,"sv":null,"t":%s}]}' % (sensor_id, sensor_value, time_now)
     else:  # taken as default for now
       sensor_data = '{"bu":"default-unit","e":[{"n":"%s","u":"default-unit","v":%s,"bv":null,"sv":null,"t":%s}]}' % (sensor_id, sensor_value, time_now)
@@ -83,10 +83,11 @@ def run(OperatingStatus_Value, Longitude_Value, Latitude_Value, Altitude_Value, 
                       "CameraOnOff_Value":[CameraOnOff_Value,"bv"], "RemainingBattery_Value":[RemainingBattery_Value,"v"],
                       "RemainingFlight_Value":[RemainingFlight_Value,"v"], "CommandString_Value":[CommandString_Value,"sv"] }
     # sensor.items() for python 3.X
-    for sensor_name,sensor_id in sensors.iteritems():
+    for sensor_name in sensors.keys():
 
         sensor_value = sensor_inputs[sensor_name][0]
-        sensor_type = sensor_inputs[sensor_name][1]
+        sensor_type  = sensor_inputs[sensor_name][1]
+        sensor_id    = sensors[sensor_name]
         (header_data, sensor_data) = post_data(sensor_id, sensor_value, gateway_id, sensor_type) 
         response = requests.post(url, data=sensor_data, headers=header_data)
         
@@ -94,5 +95,5 @@ def run(OperatingStatus_Value, Longitude_Value, Latitude_Value, Altitude_Value, 
             print("Error: Post Response: "+ str(response.status_code))
             sys.exit(1)
 
-        print("Posted %s: %s" % (sensor_name, sensor_data))
-        print("Post Response Status: " + str(response.status_code))
+        #print("Posted %s: %s" % (sensor_name, sensor_data))
+        #print("Post Response Status: " + str(response.status_code))

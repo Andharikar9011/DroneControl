@@ -4,7 +4,9 @@
 #Austin Greisman
 
 import socket
-import Adafruit_PCA9685
+import board
+import busio
+import adafruit_pca9685
 import time
 import re
 import sys
@@ -12,7 +14,8 @@ import select
 from simple_pid import PID
 
 import ultrasonic #call distance() returns cm
-
+import gps        #returns dic of parameters
+from threading import Thread
 import AppIot_Drone_Send
 
 import AngleMeterAlpha #kalman filter with MPU6050
@@ -33,17 +36,18 @@ mpu.measure()
 #.get_accel_data() -> Same as Gyro m/s^2
 
 # If gyro
-
-pwm = Adafruit_PCA9685.PCA9685()
+i2c = busio.I2C(board.SCL, board.SDA)
+pwm = adafruit_pca9685.PCA9685(i2c)
+#pwm = Adafruit_PCA9685.PCA9685()
 #Values were deteremind to be the ZERO and MIN points for the proper PWM widths sent to onboard flight controller
 #These have now been tested in the lab and are infact correct! Creates pulse widths beteen 1-2ms. Zero value = 1.5ms at 50hz
-MIN_VALUE  = 240
-ZERO_VALUE = 325
-MAX_VALUE  = 420
+MIN_VALUE  = 3807
+ZERO_VALUE = 5246
+MAX_VALUE  = 6685
 
 #Frequency determind from someone who hacked the NAZAM-V2. Possible this could be changed. But it does work.
 #Link here for reference: https://github.com/minla-rc/Minla-LTE-Receiver/raw/master/documentation/minla_pinout_and_naza_connection_v0.35_EN.pdf
-pwm.set_pwm_freq(50)
+pwm.frequency = 50
 # Output file for logging
 current_output_name = time.strftime("%Y-%m-%d_%H:%M:%S", time.gmtime())
 
@@ -70,12 +74,15 @@ def AutoLand():
     talktopi(ZERO_VALUE, ZERO_VALUE, MIN_VALUE, ZERO_VALUE)
     time.sleep(1)
 
-def IoT_send(OperatingStatus_Value, Longitude_Value, Latitude_Value, Altitude_Value, Speed_Value, CameraOnOff_Value, RemainingBattery_Value, RemainingFlight_Value, CommandString_Value):
+def IoT_send():#(OperatingStatus_Value, Longitude_Value, Latitude_Value, Altitude_Value, Speed_Value, CameraOnOff_Value, RemainingBattery_Value, RemainingFlight_Value, CommandString_Value):
     #Run daily regression
-    printboth("Sending data to IoT Accelerator...")
-    thread = Thread(target = AppIot_Drone_Send.run(OperatingStatus_Value, Longitude_Value, Latitude_Value, Altitude_Value, Speed_Value, CameraOnOff_Value, RemainingBattery_Value, RemainingFlight_Value, CommandString_Value))
-    thread.daemon = True
-    thread.start()
+    gpsData = gps.get_data()
+    if gpsData != 'Waiting for Fix':
+        printboth("Sending data to IoT Accelerator...")
+        AppIot_Drone_Send.run("1", gpsData['Longitude'], gpsData['Latitude'], gpsData['Altitude'], gpsData['Speed'], "1", "90", "80", "SNAFU")
+        printboth("Sent...")
+    else:
+        printboth("Wating for fix")
     
 # If system disconnects, this function is run to automatically land the Drone safely. Need to add in Ultrasonic sense
 def disconnected(c, s):
@@ -91,10 +98,10 @@ def disconnected(c, s):
 def talktopi(aileron, elevator, throttle, rudder):
     printboth("Roll: %s, Pitch: %s, Yaw: %s, Throttle: %s, "%(aileron, elevator, rudder, throttle))
     
-    pwm.set_pwm(0, 0, int(aileron)) #A
-    pwm.set_pwm(3, 0, int(elevator))  # E
-    pwm.set_pwm(4, 0, int(throttle))  # T
-    pwm.set_pwm(7, 0, int(rudder))  # R
+    pwm.channels[0].duty_cycle = int(aileron) #A
+    pwm.channels[3].duty_cycle = int(elevator)  # E
+    pwm.channels[4].duty_cycle = int(throttle)  # T
+    pwm.channels[7].duty_cycle = int(rudder)  # R
     time.sleep(0.01)
 
 def Main():
@@ -119,10 +126,11 @@ def Main():
     c, addr = s.accept()
     c.settimeout(3)
     printboth("Connection from: " + str(addr))
+    threadcounter = 0
     while True:
         #Trys to send data to Controller to maintain sync
         try:
-            c.send('1')
+            c.send('1'.encode('utf-8'))
         except:
             disconnected(c, s)
             break
@@ -136,6 +144,10 @@ def Main():
             if err == 'timed out':
                 disconnected(c, s)
                 break
+            elif err == 104:
+                printboth("Disconnected by controller")
+                disconnected(c, s)
+                break
             else:
                 printboth(e)
                 break
@@ -143,6 +155,18 @@ def Main():
         values = re.split(",+", data)
         try:
             talktopi(values[0], values[1], values[2], values[3])
+            #Do some more stuff here
+            #gpsData = gps.get_data()
+            thread = Thread(target = IoT_send)
+            thread.daemon = True
+            if not thread.isAlive() and threadcounter > 100:
+                thread.start()
+                threadcounter = 0
+                print("Thread Reset")
+            #print(gpsData)
+            #IoT_send("1", gpsData['Longitude'], gpsData['Latitude'], gpsData['Altitude'], gpsData['Speed'], "1", "90", "80", "SNAFU")
+            threadcounter += 1
+            #Finish doing more stuff here
         except IndexError:
             printboth("Index Error... Most likely connection down..")
             disconnected(c, s)
@@ -163,7 +187,7 @@ if __name__ == '__main__':
             try:
                 err = e.args[0]
             except:
-	        output_file.close()
+                output_file.close()
                 print("KeyboardInterrupt... Output file closed...")
                 break
 
