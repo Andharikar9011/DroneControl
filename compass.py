@@ -45,7 +45,7 @@ def read_raw_data(addr):
         return value
 
 
-bus = smbus.SMBus(1) 	# or bus = smbus.SMBus(0) for older version boards
+bus = smbus.SMBus(3) 	# or bus = smbus.SMBus(0) for older version boards
 Device_Address = 0x1e   # HMC5883L magnetometer device address
 
 Magnetometer_Init()     # initialize HMC5883L magnetometer 
